@@ -3,7 +3,7 @@
   "scripts": {
     "start": "node app.js"
   },
-  "version": "1.0.0",
+  "version": "0.0.1",
   "peerDependencies": {},
   "devDependencies": {
     "jscs": "^3.0.7",

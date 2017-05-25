@@ -22,7 +22,7 @@ WORKDIR /usr/app
 ADD . /usr/app/
 
 # Modify this if not correct path to the webgme-docker-worker node_module
-ADD node_modules/webgme-docker-worker/dockerworker.js /usr/app/dockerworker.js
+ADD node_modules/webgme-docker-worker-manager/dockerworker.js /usr/app/dockerworker.js
 
 # Install the node-modules.
 RUN npm install
