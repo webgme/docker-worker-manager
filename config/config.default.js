@@ -8,8 +8,10 @@ var config = require('./config.webgme'),
 config.plugin.allowServerExecution = true;
 config.server.workerManager.path = path.join(__dirname, '../dockerworkermanager');
 config.server.workerManager.options = {
-    dockerode: undefined, // https://github.com/apocas/dockerode#getting-started
-    image: 'webgme-docker-worker'
+    //dockerode: null, // https://github.com/apocas/dockerode#getting-started
+    image: 'webgme-docker-worker',
+    maxRunningContainers: 4,
+    removeContainerAtFailure: true
 };
 
 validateConfig(config);
