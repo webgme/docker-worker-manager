@@ -16,7 +16,8 @@ describe('Docker Worker Manager', function () {
         expect = testFixture.expect,
         DockerWorkerManager = require('../dockerworkermanager'),
         Docker = require('dockerode'),
-        docker = new Docker(gmeConfig.server.workerManager.options.dockerode);
+        docker = new Docker(gmeConfig.server.workerManager.options.dockerode),
+        wm;
 
     function getRequestParams(timeout, expectType) {
 
@@ -78,8 +79,19 @@ describe('Docker Worker Manager', function () {
             .catch(done);
     });
 
+    afterEach(function (done) {
+        done();
+        if (wm) {
+            wm.stop()
+                .finally(function (err) {
+                    wm = null;
+                    done(err);
+                });
+        }
+    });
+
     it('should start and stop', function (done) {
-        var wm = new DockerWorkerManager({
+        wm = new DockerWorkerManager({
             logger: logger,
             gmeConfig: gmeConfig
         });
@@ -97,10 +109,33 @@ describe('Docker Worker Manager', function () {
             .nodeify(done);
     });
 
+    it('non plugin command should be handled by regular SWM', function (done) {
+        this.timeout(10000);
+
+        wm = new DockerWorkerManager({
+            logger: logger,
+            gmeConfig: gmeConfig
+        });
+
+        wm.start()
+            .then(function () {
+                expect(wm.isRunning).to.equal(true);
+                wm.request({command: 'DummyCommand'}, function (err) {
+                    try {
+                        expect(err.message).to.contain('unknown command');
+                        done();
+                    } catch (e) {
+                        done(e);
+                    }
+                });
+            })
+            .catch(done);
+    });
+
     it('should handle plugin request and return success result', function (done) {
         this.timeout(10000);
 
-        var wm = new DockerWorkerManager({
+        wm = new DockerWorkerManager({
             logger: logger,
             gmeConfig: gmeConfig
         });
@@ -125,7 +160,7 @@ describe('Docker Worker Manager', function () {
     it('should handle plugin request and return failure result', function (done) {
         this.timeout(10000);
 
-        var wm = new DockerWorkerManager({
+        wm = new DockerWorkerManager({
             logger: logger,
             gmeConfig: gmeConfig
         });
@@ -151,7 +186,7 @@ describe('Docker Worker Manager', function () {
     it('should handle plugin request and return error result', function (done) {
         this.timeout(10000);
 
-        var wm = new DockerWorkerManager({
+        wm = new DockerWorkerManager({
             logger: logger,
             gmeConfig: gmeConfig
         });
@@ -176,7 +211,7 @@ describe('Docker Worker Manager', function () {
     it('should handle plugin request and return uncaught exception result', function (done) {
         this.timeout(10000);
 
-        var wm = new DockerWorkerManager({
+        wm = new DockerWorkerManager({
             logger: logger,
             gmeConfig: gmeConfig
         });
@@ -198,25 +233,52 @@ describe('Docker Worker Manager', function () {
             .catch(done);
     });
 
-    it('non plugin command should be handled by regular SWM', function (done) {
+    // FIXME: This fails on windows (at least) with the error the the container is already being removed..
+    it('should handle two requests in parallel', function (done) {
         this.timeout(10000);
 
-        var wm = new DockerWorkerManager({
+        wm = new DockerWorkerManager({
             logger: logger,
             gmeConfig: gmeConfig
         });
 
         wm.start()
             .then(function () {
-                expect(wm.isRunning).to.equal(true);
-                wm.request({command: 'DummyCommand'}, function (err) {
-                    try {
-                        expect(err.message).to.contain('unknown command');
-                        done();
-                    } catch (e) {
-                        done(e);
+                var twoWereRunning = false,
+                    intervalId = setInterval(function () {
+                        if (Object.keys(wm.running).length === 2) {
+                            twoWereRunning = true;
+                            clearInterval(intervalId);
+                        }
+                    }, 50),
+                    cnt = 2,
+                    error;
+
+                function reqCb(err, result) {
+                    error = error || err;
+                    cnt -= 1;
+
+                    console.log(JSON.stringify(result));
+
+                    if (cnt === 0) {
+                        clearInterval(intervalId);
+                        if (error) {
+                            done(error);
+                        } else if (twoWereRunning === false) {
+                            done(new Error('Two containers were never running'));
+                        } else {
+                            done();
+                        }
                     }
-                });
+                }
+
+                expect(wm.isRunning).to.equal(true);
+
+                wm.request(getRequestParams(200), reqCb);
+                setTimeout(function () {
+                    wm.request(getRequestParams(200), reqCb);
+                }, 50);
+
             })
             .catch(done);
     });

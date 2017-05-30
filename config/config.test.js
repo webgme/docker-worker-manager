@@ -13,5 +13,6 @@ config.mongo.uri = 'mongodb://127.0.0.1:27017/webgme_tests';
 
 
 config.server.workerManager.options.image = 'webgme-dummy-docker-worker:' + packageJson.version;
+config.server.workerManager.options.maxRunningContainers = 2;
 
 module.exports = config;

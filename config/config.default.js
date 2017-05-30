@@ -11,7 +11,7 @@ config.server.workerManager.options = {
     //dockerode: null, // https://github.com/apocas/dockerode#getting-started
     image: 'webgme-docker-worker',
     maxRunningContainers: 4,
-    removeContainerAtFailure: true
+    keepContainersAtFailure: false
 };
 
 validateConfig(config);

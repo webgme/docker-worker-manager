@@ -38,11 +38,12 @@ function DockerWorkerManager(params) {
             job.callback(error, result);
         }
 
+        logger.info('Creating container', job.dockerParams);
         docker.createContainer(job.dockerParams)
             .then(function (container_) {
                 container = container_;
 
-                logger.info('Container created');
+                logger.info('Container created', container.id);
                 if (self.isRunning === false) {
                     // This is needed at stop.
                     throw new Error('Worker Manager was shutdown!');
@@ -91,7 +92,7 @@ function DockerWorkerManager(params) {
                     deferred.resolve(jsonContent);
                 });
 
-                logger.info('Received artifcat');
+                logger.info('Received artifact');
 
                 res.pipe(extract);
 
@@ -108,15 +109,15 @@ function DockerWorkerManager(params) {
             })
             .then(final)
             .catch(function (err) {
-                logger.error(err);
+                logger.error(err.stack);
 
                 // Report the job error..
                 error = error || err;
-                if (container) {
-                    container.remove() // FIXME: Force/kill option?
+                if (container && !gmeConfig.server.workerManager.options.keepContainersAtFailure) {
+                    container.remove()
                         .then(final)
                         .catch(function (err) {
-                            logger.error(err);
+                            logger.error(err.stack);
                             final();
                         });
                 } else {
@@ -213,7 +214,7 @@ function DockerWorkerManager(params) {
                     Image: gmeConfig.server.workerManager.options.image || 'webgme-docker-worker',
                     name: jobId,
                     Tty: false, // False in order to separate stdout/err.
-                    Env: ['NODE_ENV=' + (process.NODE_ENV || 'default')],
+                    Env: ['NODE_ENV=' + (process.env.NODE_ENV || 'default')],
                     Cmd: ['node', 'dockerworker.js', JSON.stringify(parameters)]
                 }
             });
