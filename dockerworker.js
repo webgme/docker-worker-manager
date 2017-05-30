@@ -27,8 +27,13 @@ function safeSend(data) {
             process.exit(0);
         }
     });
-
 }
+
+process.on('uncaughtException', function (err) {
+    safeSend({
+        error: err.stack
+    });
+});
 
 function runCommand(parameters) {
     var wr = new WorkerRequests(logger, gmeConfig, parameters.webgmeUrl);
@@ -41,14 +46,14 @@ function runCommand(parameters) {
         wr.executePlugin(parameters.webgmeToken, parameters.socketId, parameters.name, parameters.context,
             function (err, result) {
                 safeSend({
-                    error: err ? err.message : null,
+                    error: err ? err.stack : null,
                     result: result
                 });
             }
         );
     } else {
         safeSend({
-            error: 'unknown command ' + parameters.command
+            error: 'unknown command [' + parameters.command + ']'
         });
     }
 }

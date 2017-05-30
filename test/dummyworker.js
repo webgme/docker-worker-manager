@@ -4,7 +4,6 @@
  */
 
 'use strict';
-
 var fs = require('fs');
 
 function safeSend(data) {
@@ -24,15 +23,26 @@ function safeSend(data) {
 
 }
 
+process.on('uncaughtException', function (err) {
+    console.error(err.stack);
+    safeSend({
+        error: err.message
+    });
+});
+
 function runCommand(parameters) {
     parameters = parameters || {};
     parameters.command = parameters.command;
 
+    // Additional parameters for testing
+    // parameters.expect = 0 -> success
+    // parameters.expect = 1 -> failure with result
+    // parameters.expect = 2 -> failure without result
+
     console.log('Incoming message:', {metadata: parameters});
 
     if (parameters.command === 'executePlugin') {
-
-        if (true) {
+        if (!parameters.expect) {
             safeSend({
                 error: null,
                 result: {
@@ -48,11 +58,28 @@ function runCommand(parameters) {
                     success: true
                 }
             });
-        } else {
+        } else if (parameters.expect === 1) {
             safeSend({
-                error: new Error('Plugin failed'),
-                result: null
+                error: 'Plugin failed',
+                result: {
+                    artifacts: [],
+                    commits: [],
+                    error: 'Plugin failed',
+                    finishTime: (new Date()).toISOString(),
+                    messages: [],
+                    pluginName: parameters.name,
+                    pluginId: parameters.name,
+                    projectId: parameters.context.managerConfig.project,
+                    startTime: (new Date()).toISOString(),
+                    success: false
+                }
             });
+        } else if (parameters.expect === 2) {
+            safeSend({
+                error: 'Plugin execution errored'
+            });
+        } else if (parameters.expect === 3) {
+            throw new Error('Unhandled error');
         }
 
     } else {
@@ -62,5 +89,12 @@ function runCommand(parameters) {
     }
 }
 
-console.log('Inside dummy worker');
-runCommand(JSON.parse(process.argv[2]));
+if (typeof describe !== 'undefined') {
+    // Loaded by mocha...
+} else {
+    console.log('Inside dummy worker');
+    var input = JSON.parse(process.argv[2]);
+    setTimeout(function () {
+        runCommand(input);
+    }, input.timeout || 0);
+}

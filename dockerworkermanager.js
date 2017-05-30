@@ -51,7 +51,7 @@ function DockerWorkerManager(params) {
                 job.containerId = container.id;
 
                 container.attach({stream: true, stdout: true, stderr: true}, function (err, stream) {
-                    // TODO: Pipe these properly..
+                    // TODO: Pipe these properly to logger debug/error
                     container.modem.demuxStream(stream, process.stdout, process.stderr);
                 });
 
@@ -99,21 +99,29 @@ function DockerWorkerManager(params) {
             })
             .then(function (resultStr) {
                 logger.info('Got result str', resultStr);
-                result = JSON.parse(resultStr);
-                error = result.error ? new Error(result.error) : null;
+                var parsedRes = JSON.parse(resultStr);
+
+                result = parsedRes.result;
+                error = parsedRes.error ? new Error(parsedRes.error) : null;
 
                 return container.remove();
             })
             .then(final)
             .catch(function (err) {
                 logger.error(err);
-                error = error || err; // Report the job error..
-                container.remove() // FIXME: Force/kill option?
-                    .then(final)
-                    .catch(function (err) {
-                        logger.error(err); // Report the first error..
-                        final();
-                    });
+
+                // Report the job error..
+                error = error || err;
+                if (container) {
+                    container.remove() // FIXME: Force/kill option?
+                        .then(final)
+                        .catch(function (err) {
+                            logger.error(err);
+                            final();
+                        });
+                } else {
+                    final();
+                }
             });
     }
 

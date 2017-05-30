@@ -1,4 +1,3 @@
-// This is used by the test/plugins tests
 /*globals requireJS*/
 /*jshint node:true*/
 /**
@@ -15,18 +14,42 @@ var testFixture = require('webgme/test/_globals'),
 
 var WebGME = testFixture.WebGME,
     gmeConfig = require(WEBGME_CONFIG_PATH),
+    _logger,
     getGmeConfig = function getGmeConfig() {
-    'use strict';
     // makes sure that for each request it returns with a unique object and tests will not interfere
     if (!gmeConfig) {
         // if some tests are deleting or unloading the config
         gmeConfig = require(WEBGME_CONFIG_PATH);
+        WebGME.addToRequireJsPaths(gmeConfig);
     }
+
     return JSON.parse(JSON.stringify(gmeConfig));
 };
 
 WebGME.addToRequireJsPaths(gmeConfig);
 
 testFixture.getGmeConfig = getGmeConfig;
+
+Object.defineProperty(testFixture, 'infoLogger', {
+    get: function () {
+        if (!_logger) {
+            _logger = testFixture.Logger.create('gme:test', {
+                //patterns: ['gme:test:*cache'],
+                transports: [{
+                    transportType: 'Console',
+                    options: {
+                        level: 'info',
+                        colorize: true,
+                        timestamp: true,
+                        prettyPrint: true,
+                        depth: 4,
+                        debugStdout: true
+                    }
+                }]
+            }, false);
+        }
+        return _logger;
+    }
+});
 
 module.exports = testFixture;
