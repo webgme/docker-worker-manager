@@ -23,13 +23,6 @@ function safeSend(data) {
 
 }
 
-process.on('uncaughtException', function (err) {
-    console.error(err.stack);
-    safeSend({
-        error: err.message
-    });
-});
-
 function runCommand(parameters) {
     parameters = parameters || {};
     parameters.command = parameters.command;
@@ -93,6 +86,14 @@ if (typeof describe !== 'undefined') {
     // Loaded by mocha...
 } else {
     console.log('Inside dummy worker');
+
+    process.on('uncaughtException', function (err) {
+        console.error(err.stack);
+        safeSend({
+            error: err.message
+        });
+    });
+
     var input = JSON.parse(process.argv[2]);
     setTimeout(function () {
         runCommand(input);
