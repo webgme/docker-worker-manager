@@ -157,7 +157,7 @@ describe('Full stack DWM', function () {
             });
     });
 
-    it.only('should run plugin that generates blob artifact', function (done) {
+    it('should run plugin that generates blob artifact', function (done) {
         var requestBody = {
             pluginId: 'PluginGenerator',
             projectId: ir.project.projectId,
