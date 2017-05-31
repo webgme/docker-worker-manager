@@ -1,11 +1,14 @@
 /*jshint node: true, mocha: true*/
 
 /**
+ * Make sure to build 
+ *   $ docker build -t docker-worker-test:<PACKAGE_VERSION> .
+ * 
  * @author pmeijer / https://github.com/pmeijer
  */
 'use strict';
 
-describe.only('Full stack DWM', function () {
+describe('Full stack DWM', function () {
 
     var testFixture = require('./globals'),
         gmeConfig = testFixture.getGmeConfig(),
