@@ -1,6 +1,8 @@
 /*globals requireJS*/
 /*jshint node: true*/
 /**
+ * https://docs.docker.com/engine/api/v1.29
+ *
  * @author pmeijer / https://github.com/pmeijer
  */
 
@@ -109,18 +111,28 @@ function DockerWorkerManager(params) {
             })
             .then(final)
             .catch(function (err) {
+                var promise;
+
                 logger.error(err.stack);
 
                 // Report the job error..
                 error = error || err;
-                if (container && !gmeConfig.server.workerManager.options.keepContainersAtFailure) {
-                    container.remove()
+
+                if (container && self.running === true) {
+                    if (gmeConfig.server.workerManager.options.keepContainersAtFailure) {
+                        promise = container.kill(); // kill or stop?
+                    } else {
+                        promise = container.remove({force: true});
+                    }
+
+                    promise
                         .then(final)
                         .catch(function (err) {
                             logger.error(err.stack);
                             final();
                         });
                 } else {
+                    logger.info('Container is not running');
                     final();
                 }
             });
@@ -167,13 +179,14 @@ function DockerWorkerManager(params) {
 
         runningIds.forEach(function (jobId) {
             var job = self.running[jobId],
+                promise,
                 container;
 
             // High-jack the callback from the queue handling.
             job.callback = function (err) {
-                logger.error('Worker shutdown', jobId, err);
+                logger.info('Worker shutdown', jobId, err);
 
-                job.requesterCallback(err);
+                job.requesterCallback(new Error('Worker Manager was shutdown!'));
                 cnt -= 1;
 
                 if (cnt === 0) {
@@ -185,7 +198,19 @@ function DockerWorkerManager(params) {
             if (self.running[jobId].containerId) {
                 logger.info(jobId, 'have a containerId - removing it forcefully and awaiting response.');
                 container = docker.getContainer(self.running[jobId].containerId);
-                container.remove(); // FIXME: Force/kill option?
+
+                self.running[jobId].containerId = null;
+
+                if (gmeConfig.server.workerManager.options.keepContainersAtFailure) {
+                    promise = container.kill();
+                } else {
+                    promise = container.remove({force: true});
+                }
+
+                promise
+                    .catch(function (err) {
+                        job.callback(err);
+                    });
             } else {
                 logger.info(jobId, 'does not have a containerId - it should be launching face and ' +
                     'should throw an error.');
@@ -249,6 +274,7 @@ function DockerWorkerManager(params) {
                     logger.error(new Error('Could not inspect docker "bridge" network correctly ' +
                         JSON.stringify(networkInfo)));
 
+                    // TODO: This should throw - it just doesn't work on windows (out of the box at least)
                     // throw new Error('Could not inspect docker "bridge" network correctly ' +
                     // JSON.stringify(networkInfo));
                 }

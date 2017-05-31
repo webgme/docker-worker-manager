@@ -1,6 +1,11 @@
 /*globals requireJS*/
 /*jshint node: true, mocha: true*/
 /**
+ * Remove all containers:
+ *  windows:
+ *      FOR /f "tokens=*" %i IN ('docker ps -a -q') DO docker rm %i
+ *  linux:
+ *      docker rm $(docker ps -a -q)
  * @author pmeijer / https://github.com/pmeijer
  */
 
@@ -234,6 +239,30 @@ describe('Docker Worker Manager', function () {
             .catch(done);
     });
 
+    it('should gracefully handle case where no report file generated', function (done) {
+        this.timeout(10000);
+
+        wm = new DockerWorkerManager({
+            logger: logger,
+            gmeConfig: gmeConfig
+        });
+
+        wm.start()
+            .then(function () {
+                expect(wm.isRunning).to.equal(true);
+                wm.request(getRequestParams(0, 4), function (err) {
+                    try {
+                        expect(err instanceof Error).to.equal(true);
+                        expect(err.message).to.include('no such file or directory');
+                        done();
+                    } catch (e) {
+                        done(e);
+                    }
+                });
+            })
+            .catch(done);
+    });
+
     // FIXME: This fails on windows (at least) with the error the the container is already being removed..
     it('should handle two requests in parallel', function (done) {
         this.timeout(10000);
@@ -276,10 +305,197 @@ describe('Docker Worker Manager', function () {
                 expect(wm.isRunning).to.equal(true);
 
                 wm.request(getRequestParams(200), reqCb);
-                setTimeout(function () {
-                    wm.request(getRequestParams(200), reqCb);
-                }, 50);
+                wm.request(getRequestParams(200), reqCb);
 
+            })
+            .catch(done);
+    });
+
+    it('should handle two requests but not run them in parallel (maxRunningContainers = 1) ', function (done) {
+        this.timeout(10000);
+        var oneContainerConfig = testFixture.getGmeConfig();
+
+        oneContainerConfig.server.workerManager.options.maxRunningContainers = 1;
+
+        wm = new DockerWorkerManager({
+            logger: logger,
+            gmeConfig: oneContainerConfig
+        });
+
+        wm.start()
+            .then(function () {
+                var twoWereRunning = false,
+                    oneRunningOneQueued = false,
+                    intervalId = setInterval(function () {
+                        var nRunning = Object.keys(wm.running).length;
+                        if (nRunning === 2) {
+                            twoWereRunning = true;
+                        } else if (nRunning === 1 && wm.queue.length === 1) {
+                            oneRunningOneQueued = true;
+                        }
+
+                        if (twoWereRunning && oneRunningOneQueued) {
+                            // Here we can clear it (should not happen at success though..
+                            clearInterval(intervalId);
+                        }
+                    }, 50),
+                    cnt = 2,
+                    error;
+
+                function reqCb(err, result) {
+                    error = error || err;
+                    cnt -= 1;
+
+                    console.log(JSON.stringify(result));
+
+                    if (cnt === 0) {
+                        clearInterval(intervalId);
+                        if (error) {
+                            done(error);
+                        } else if (twoWereRunning === true) {
+                            done(new Error('Two containers were running!'));
+                        } else if (oneRunningOneQueued === false) {
+                            done(new Error('One running and one queued never happened!'));
+                        } else {
+                            done();
+                        }
+                    }
+                }
+
+                expect(wm.isRunning).to.equal(true);
+
+                wm.request(getRequestParams(200), reqCb);
+                wm.request(getRequestParams(200), reqCb);
+            })
+            .catch(done);
+    });
+
+    it('should stop and remove running container at stop and call the callback with error 1', function (done) {
+        // This is shutting down during creation of the container.
+        this.timeout(10000);
+
+        var cbCalled = false,
+            error = null;
+
+        wm = new DockerWorkerManager({
+            logger: logger,
+            gmeConfig: gmeConfig
+        });
+
+        wm.start()
+            .then(function () {
+
+                expect(wm.isRunning).to.equal(true);
+
+
+                function reqCb(err) {
+                    cbCalled = true;
+
+                    try {
+                        expect(err instanceof Error).to.equal(true);
+                        expect(err.message).to.include('Worker Manager was shutdown');
+                    } catch (e) {
+                        error = e;
+                    }
+                }
+
+                wm.request(getRequestParams(10000), reqCb);
+
+                return wm.stop();
+            })
+            .then(function () {
+                expect(cbCalled).to.equal(true);
+                expect(Object.keys(wm.running).length).to.equal(0);
+                expect(Object.keys(wm.queue).length).to.equal(0);
+                expect(error).to.equal(null);
+                done();
+            })
+            .catch(done);
+    });
+
+    it('should stop and remove running container at stop and call the callback with error 2', function (done) {
+        // This is shutting down after the container has been created
+        this.timeout(10000);
+
+        var cbCalled = false,
+            error = null;
+
+        wm = new DockerWorkerManager({
+            logger: logger,
+            gmeConfig: gmeConfig
+        });
+
+        wm.start()
+            .then(function () {
+
+                expect(wm.isRunning).to.equal(true);
+
+                function reqCb(err) {
+                    cbCalled = true;
+
+                    try {
+                        expect(err instanceof Error).to.equal(true);
+                        expect(err.message).to.include('Worker Manager was shutdown');
+                    } catch (e) {
+                        error = e;
+                    }
+                }
+
+                wm.request(getRequestParams(10000), reqCb);
+
+                setTimeout(function () {
+                    wm.stop()
+                        .then(function () {
+                            expect(cbCalled).to.equal(true);
+                            expect(Object.keys(wm.running).length).to.equal(0);
+                            expect(Object.keys(wm.queue).length).to.equal(0);
+                            expect(error).to.equal(null);
+                            done();
+                        })
+                        .catch(done);
+                }, 1000);
+            })
+            .catch(done);
+    });
+
+    it('should call the callback of queued requests at stop', function (done) {
+        this.timeout(10000);
+        var oneContainerConfig = testFixture.getGmeConfig(),
+            cnt = 2,
+            error = null;
+
+        oneContainerConfig.server.workerManager.options.maxRunningContainers = 1;
+
+        wm = new DockerWorkerManager({
+            logger: logger,
+            gmeConfig: oneContainerConfig
+        });
+
+        wm.start()
+            .then(function () {
+
+                function reqCb(err) {
+                    cnt -= 1;
+                    try {
+                        expect(err.message).to.include('Worker Manager was shutdown');
+                    } catch (e) {
+                        error = e;
+                    }
+                }
+
+                expect(wm.isRunning).to.equal(true);
+
+                wm.request(getRequestParams(10000), reqCb);
+                wm.request(getRequestParams(10000), reqCb);
+
+                return wm.stop();
+            })
+            .then(function () {
+                expect(cnt).to.equal(0);
+                expect(Object.keys(wm.running).length).to.equal(0);
+                expect(Object.keys(wm.queue).length).to.equal(0);
+                expect(error).to.equal(null);
+                done();
             })
             .catch(done);
     });

@@ -5,7 +5,7 @@
     "test": "node ./node_modules/mocha/bin/mocha --recursive test",
     "test_cover": "node ./node_modules/istanbul/lib/cli.js --hook-run-in-context cover node_modules/mocha/bin/_mocha -- -R spec --recursive test"
   },
-  "version": "0.0.1",
+  "version": "0.0.2",
   "peerDependencies": {},
   "devDependencies": {
     "istanbul": "^0.4.5",

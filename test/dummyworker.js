@@ -73,6 +73,9 @@ function runCommand(parameters) {
             });
         } else if (parameters.expect === 3) {
             throw new Error('Unhandled error');
+        } else if (parameters.expect === 2) {
+            console.log(new Error('No report file generated!'));
+            process.exit(2);
         }
 
     } else {
