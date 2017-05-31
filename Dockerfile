@@ -21,7 +21,7 @@ WORKDIR /usr/app
 # copy app source
 ADD . /usr/app/
 
-# Modify this when webgme-docker-worker-manager is a node_module
+# Swap these two lines when webgme-docker-worker-manager is a node_module
 ADD dockerworker.js /usr/app/dockerworker.js
 #ADD node_modules/webgme-docker-worker-manager/dockerworker.js /usr/app/dockerworker.js
 

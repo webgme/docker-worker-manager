@@ -270,12 +270,8 @@ function DockerWorkerManager(params) {
                     typeof networkInfo.IPAM.Config[0] === 'object' &&
                     typeof networkInfo.IPAM.Config[0].Gateway === 'string')) {
 
-                    logger.error(new Error('Could not inspect docker "bridge" network correctly ' +
-                        JSON.stringify(networkInfo)));
-
-                    // TODO: This should throw - it just doesn't work on windows (out of the box at least)
-                    // throw new Error('Could not inspect docker "bridge" network correctly ' +
-                    // JSON.stringify(networkInfo));
+                    throw new Error('Could not find correct info from docker "bridge" network correctly ' +
+                    JSON.stringify(networkInfo));
                 }
 
                 webgmeUrl = 'http://' + networkInfo.IPAM.Config[0].Gateway + ':' + gmeConfig.server.port;
