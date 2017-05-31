@@ -2,6 +2,7 @@
   "name": "webgme-docker-worker-manager",
   "scripts": {
     "start": "node app.js",
+    "test": "node ./node_modules/mocha/bin/mocha --recursive test",
     "test_cover": "node ./node_modules/istanbul/lib/cli.js --hook-run-in-context cover node_modules/mocha/bin/_mocha -- -R spec --recursive test"
   },
   "version": "0.0.1",
@@ -17,6 +18,7 @@
   },
   "dependencies": {
     "dockerode": "^2.4.3",
+    "q": "^1.5.0",
     "tar-stream": "^1.5.4"
   }
 }
