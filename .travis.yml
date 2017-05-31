@@ -1,0 +1,35 @@
+language: node_js
+services:
+  - mongodb
+  - docker
+sudo: required
+
+# https://github.com/travis-ci/apt-source-whitelist/blob/master/ubuntu.json
+addons:
+  apt:
+    sources:
+      - mongodb-3.2-precise
+
+    packages:
+      - mongodb-org-server
+
+cache:
+  directories:
+    - node_modules
+
+# git:
+#   depth: 5
+
+node_js:
+  - "4"
+  - "6"
+
+env:
+  - TEST_FOLDER=true
+
+before_script:
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+
+script:
+  - "npm test"
