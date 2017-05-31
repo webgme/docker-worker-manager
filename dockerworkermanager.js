@@ -12,6 +12,7 @@ var Docker = require('dockerode'),
     Q = require('q'),
     tar = require('tar-stream'),
     CONSTANTS = requireJS('common/Constants'),
+    guid = requireJS('common/util/guid'),
     WorkerManagerBase = require('webgme/src/server/worker/WorkerManagerBase'),
 // ServerWorkerManager will receive all non-plugin requests.
     ServerWorkerManager = require('webgme/src/server/worker/serverworkermanager'),
@@ -40,7 +41,7 @@ function DockerWorkerManager(params) {
             job.callback(error, result);
         }
 
-        logger.info('Creating container', job.dockerParams);
+        logger.debug('Creating container', job.dockerParams);
         docker.createContainer(job.dockerParams)
             .then(function (container_) {
                 container = container_;
@@ -118,7 +119,7 @@ function DockerWorkerManager(params) {
                 // Report the job error..
                 error = error || err;
 
-                if (container && self.running === true) {
+                if (container) {
                     if (gmeConfig.server.workerManager.options.keepContainersAtFailure) {
                         promise = container.kill(); // kill or stop?
                     } else {
@@ -199,8 +200,6 @@ function DockerWorkerManager(params) {
                 logger.info(jobId, 'have a containerId - removing it forcefully and awaiting response.');
                 container = docker.getContainer(self.running[jobId].containerId);
 
-                self.running[jobId].containerId = null;
-
                 if (gmeConfig.server.workerManager.options.keepContainersAtFailure) {
                     promise = container.kill();
                 } else {
@@ -212,7 +211,7 @@ function DockerWorkerManager(params) {
                         job.callback(err);
                     });
             } else {
-                logger.info(jobId, 'does not have a containerId - it should be launching face and ' +
+                logger.info(jobId, 'does not have a containerId - it should be in launching face and ' +
                     'should throw an error.');
             }
         });
@@ -227,7 +226,7 @@ function DockerWorkerManager(params) {
             logger.info('"executePlugin" received - launching docker container');
 
             // This is used as the name of the container as well.
-            jobId = parameters.name + '_' + Date.now();
+            jobId = parameters.name + '_' + guid();
 
             parameters.webgmeUrl = webgmeUrl;
 
@@ -256,7 +255,7 @@ function DockerWorkerManager(params) {
 
         if (self.isRunning) {
             deferred.resolve();
-            return deferred.promise;
+            return deferred.promise.nodeify(callback);
         }
 
         swm.start()

@@ -1,6 +1,8 @@
 /*globals requireJS*/
 /*jshint node: true, mocha: true*/
 /**
+ * This tests using a dummy-worker w/o actually running the plugin.
+ *
  * Remove all containers:
  *  windows:
  *      FOR /f "tokens=*" %i IN ('docker ps -a -q') DO docker rm %i
@@ -17,7 +19,7 @@ describe('Docker Worker Manager', function () {
         gmeConfig = testFixture.getGmeConfig(),
         Q = testFixture.Q,
         CONSTANTS = requireJS('common/Constants'),
-        logger = testFixture.infoLogger.fork('spec'),
+        logger = testFixture.infoLogger.fork('dummy.spec'),
         expect = testFixture.expect,
         DockerWorkerManager = require('../dockerworkermanager'),
         Docker = require('dockerode'),
@@ -48,7 +50,7 @@ describe('Docker Worker Manager', function () {
             .then(function (images) {
                 var exists = false;
 
-                console.log('Checking if image exists', gmeConfig.server.workerManager.options.image);
+                logger.info('Checking if image exists', gmeConfig.server.workerManager.options.image);
 
                 images.forEach(function (info) {
                     if (info.RepoTags.indexOf(gmeConfig.server.workerManager.options.image) > -1) {
@@ -57,12 +59,12 @@ describe('Docker Worker Manager', function () {
                 });
 
                 if (exists) {
-                    console.log('Image existed');
+                    logger.info('Image existed');
                     return Q.resolve();
                 } else {
-                    console.log('Image did not exist, building...');
+                    logger.info('Image did not exist, building...');
                     return docker.buildImage({
-                        context: __dirname,
+                        context: testFixture.path.join(__dirname, 'dummyworker'),
                         src: ['Dockerfile', 'dummyworker.js']
                     }, {
                         t: gmeConfig.server.workerManager.options.image
@@ -74,7 +76,7 @@ describe('Docker Worker Manager', function () {
                     stream.pipe(process.stdout, {end: true});
 
                     stream.on('end', function () {
-                        console.log('Finished building image', gmeConfig.server.workerManager.options.image);
+                        logger.info('Finished building image', gmeConfig.server.workerManager.options.image);
                         done();
                     });
                 } else {
@@ -288,8 +290,6 @@ describe('Docker Worker Manager', function () {
                     error = error || err;
                     cnt -= 1;
 
-                    console.log(JSON.stringify(result));
-
                     if (cnt === 0) {
                         clearInterval(intervalId);
                         if (error) {
@@ -345,8 +345,6 @@ describe('Docker Worker Manager', function () {
                 function reqCb(err, result) {
                     error = error || err;
                     cnt -= 1;
-
-                    console.log(JSON.stringify(result));
 
                     if (cnt === 0) {
                         clearInterval(intervalId);
@@ -496,6 +494,130 @@ describe('Docker Worker Manager', function () {
                 expect(Object.keys(wm.queue).length).to.equal(0);
                 expect(error).to.equal(null);
                 done();
+            })
+            .catch(done);
+    });
+
+    it('should keep container at failure if (keepContainersAtFailure = true)', function (done) {
+        this.timeout(10000);
+        var keepAtFailureConfig = testFixture.getGmeConfig();
+
+        keepAtFailureConfig.server.workerManager.options.keepContainersAtFailure = true;
+
+        wm = new DockerWorkerManager({
+            logger: logger,
+            gmeConfig: keepAtFailureConfig
+        });
+
+        wm.start()
+            .then(function () {
+                var containerId,
+                    cnt = 5, // Make sure it still exists more rounds..
+                    intervalId = setInterval(function () {
+                        var runningIds = Object.keys(wm.running),
+                            container;
+
+                        // Get the id of container if not obtained..
+                        if (!containerId && runningIds.length === 1 && wm.running[runningIds[0]].containerId) {
+                            containerId = wm.running[runningIds[0]].containerId;
+                            logger.info('Found container id', containerId);
+                        }
+
+                        if (containerId) {
+                            container = docker.getContainer(containerId);
+                            container.inspect()
+                            .then(function (res) {
+                                    if (res.State.Status === 'exited') {
+                                        if (cnt === 0) {
+                                            clearInterval(intervalId);
+                                            done();
+                                        }
+
+                                        cnt -= 1;
+                                    }
+                                })
+                                .catch(function (err) {
+                                    clearInterval(intervalId);
+                                    done(err);
+                                });
+                        }
+                    }, 200);
+
+                expect(wm.isRunning).to.equal(true);
+
+
+                wm.request(getRequestParams(500, 4), function (err) {
+                    if (!err) {
+                        clearInterval(intervalId);
+                        done(new Error('Worker should have failed..'));
+                    }
+                });
+            })
+            .catch(done);
+    });
+
+    it('should keep container at stop if (keepContainersAtFailure = true)', function (done) {
+        this.timeout(10000);
+        var keepAtFailureConfig = testFixture.getGmeConfig();
+
+        keepAtFailureConfig.server.workerManager.options.keepContainersAtFailure = true;
+
+        wm = new DockerWorkerManager({
+            logger: logger,
+            gmeConfig: keepAtFailureConfig
+        });
+
+        wm.start()
+            .then(function () {
+                var containerId,
+                    cnt = 5, // Make sure it still exists more rounds..
+                    intervalId = setInterval(function () {
+                        var runningIds = Object.keys(wm.running),
+                            container;
+
+                        // Get the id of container if not obtained..
+                        if (!containerId && runningIds.length === 1 && wm.running[runningIds[0]].containerId) {
+                            containerId = wm.running[runningIds[0]].containerId;
+                            logger.info('Found container id', containerId);
+                        }
+
+                        if (containerId) {
+                            container = docker.getContainer(containerId);
+                            container.inspect()
+                                .then(function (res) {
+                                    if (res.State.Status === 'exited') {
+                                        if (cnt === 0) {
+                                            clearInterval(intervalId);
+                                            done();
+                                        }
+
+                                        cnt -= 1;
+                                    }
+                                })
+                                .catch(function (err) {
+                                    clearInterval(intervalId);
+                                    done(err);
+                                });
+                        }
+                    }, 200);
+
+                expect(wm.isRunning).to.equal(true);
+
+
+                wm.request(getRequestParams(10000, 4), function (err) {
+                    if (!err) {
+                        clearInterval(intervalId);
+                        done(new Error('Worker should have failed..'));
+                    }
+                });
+
+                setTimeout(function () {
+                    wm.stop()
+                        .catch(function (err) {
+                            clearInterval(intervalId);
+                            done(err);
+                        });
+                }, 1000);
             })
             .catch(done);
     });

@@ -9,7 +9,7 @@
 var WEBGME = require('webgme'),
     fs = require('fs'),
     CONSTANTS = requireJS('common/Constants'),
-    WorkerRequests = require('webgme/server/worker/workerrequests'),
+    WorkerRequests = require('webgme/src/server/worker/workerrequests'),
     gmeConfig = WEBGME.getGmeConfig(),
     logger = WEBGME.Logger.create('gme:docker-worker:pid_' + process.pid, gmeConfig.server.log, true);
 

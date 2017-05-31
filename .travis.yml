@@ -30,6 +30,8 @@ env:
 before_script:
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
+# Bump this at updates!
+  - sudo docker build -t docker-worker-test:0.0.3 .
 
 script:
   - "npm test"
