@@ -1,11 +1,13 @@
 {
   "name": "webgme-docker-worker-manager",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "test_cover": "node ./node_modules/istanbul/lib/cli.js --hook-run-in-context cover node_modules/mocha/bin/_mocha -- -R spec --recursive test"
   },
   "version": "0.0.1",
   "peerDependencies": {},
   "devDependencies": {
+    "istanbul": "^0.4.5",
     "jscs": "^3.0.7",
     "jshint": "^2.9.4",
     "mocha": "^2.2.5",

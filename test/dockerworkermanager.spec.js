@@ -80,13 +80,14 @@ describe('Docker Worker Manager', function () {
     });
 
     afterEach(function (done) {
-        done();
         if (wm) {
             wm.stop()
                 .finally(function (err) {
                     wm = null;
                     done(err);
                 });
+        } else {
+            done();
         }
     });
 
