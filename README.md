@@ -1,5 +1,5 @@
 # webgme-docker-worker
-Since webgme version 2.14.0 the server worker manager is a replaceable module. 
+Since webgme version [2.14.0](https://github.com/webgme/webgme/releases/tag/v2.14.0) the server worker manager is a replaceable module. 
 The server worker manager (SWM) handles computationally expensive requests such as project/model export, constraint checking, 
 project seeding etc., in processes separate from the server process. 
 
