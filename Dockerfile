@@ -2,7 +2,7 @@
 # Note! If you have any other dependencies (in addition to node-modules) make sure to
 # add the neccessary steps to bundle these within the image.
 #
-# 1. Copy this file to the root of your repository.
+# 1. Copy this file to the root of your webgme repository (a clean copy, no node_modules, blobstorage etc.)
 # 2. Build the image
 #     $ docker build -t webgme-docker-worker .
 

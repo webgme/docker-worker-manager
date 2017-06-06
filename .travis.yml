@@ -30,9 +30,11 @@ env:
 before_script:
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
-  - npm install webgme
 # Bump this at updates!
-  - sudo docker build -t docker-worker-test:0.0.3 .
+  - sudo docker build -t docker-worker-test:0.0.4 .
+  - rm -rf node_modules
+  - npm install
+  - npm install webgme
 
 script:
   - "npm test"

@@ -29,6 +29,15 @@ Move over and modify the configuration parameters illustrated in [gmeConfig](./c
 
 ## Developers
 
+### Tests
+To run the full stack tests the a docker images must be built first.
+
+Make sure that the node_modules aren't installed before building the image! 
+
+```
+docker build -t docker-worker-test:<PACKAGE_JSON.version> .
+```
+
 ### Publish
 ```
 npm prune
