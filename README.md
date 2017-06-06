@@ -1,7 +1,4 @@
 # webgme-docker-worker
-
-Note! This is not yet published!
-
 Since webgme version [2.14.0](https://github.com/webgme/webgme/releases/tag/v2.14.0) the server worker manager is a replaceable module. 
 The server worker manager (SWM) handles computationally expensive requests such as project/model export, constraint checking, 
 project seeding etc., in processes separate from the server process. 
@@ -26,6 +23,11 @@ Read through the short [Dockerfile](/Dockerfile). Build correctly it will includ
 
 Move over and modify the configuration parameters illustrated in [gmeConfig](./config/config.default.js) to your configuration file.
 
+### Notes on Limitations
+This implementation uses the default docker `bridge` network for connecting the containers to the webgme server. This should work straight out of the box after docker is installed.
+If this behavior isn't desirable - feel free to create an issue or even better a PR.
+
+Also note that the approach here will most likely not work if the webgme server is running in a docker container itself.
 
 ## Developers
 
@@ -40,8 +42,6 @@ docker build -t docker-worker-test:<PACKAGE_JSON.version> .
 
 ### Publish
 ```
-npm prune
-npm install
 npm version 0.1.0 -m "Release %s"
 git push origin master
 git checkout v0.1.0
