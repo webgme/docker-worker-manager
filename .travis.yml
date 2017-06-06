@@ -32,7 +32,7 @@ before_script:
   - sh -e /etc/init.d/xvfb start
   - npm install webgme
 # Bump this at updates!
-  - sudo docker build -t docker-worker-test:0.0.2 .
+  - sudo docker build -t docker-worker-test:0.0.3 .
 
 script:
   - "npm test"
