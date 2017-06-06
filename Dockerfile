@@ -28,8 +28,8 @@ ADD dockerworker.js /usr/app/dockerworker.js
 # Install the node-modules.
 RUN npm install
 
-# Uncomment this if webgme is a peerDependency
-# RUN npm install webgme
+# Needed only if webgme is a peerDependency
+RUN npm install webgme
 
 # Make sure to set this correctly here
 ENV NODE_ENV default
