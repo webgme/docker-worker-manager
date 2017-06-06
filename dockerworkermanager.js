@@ -16,6 +16,7 @@ var Docker = require('dockerode'),
     WorkerManagerBase = require('webgme/src/server/worker/WorkerManagerBase'),
 // ServerWorkerManager will receive all non-plugin requests.
     ServerWorkerManager = require('webgme/src/server/worker/serverworkermanager'),
+    Stream = require('stream'),
     container;
 
 
@@ -27,6 +28,28 @@ function DockerWorkerManager(params) {
         swm = new ServerWorkerManager(params),
         maxRunning = gmeConfig.server.workerManager.options.maxRunningContainers || 2,
         webgmeUrl;
+
+    function getStreamLoggers(jobId) {
+        var debugStream = new Stream.Writable(),
+            errorStream = new Stream.Writable();
+
+        debugStream._write = function (chunk, encoding, next) {
+            // Warn, info and debug will go to debug.
+            logger.debug(jobId, ':', chunk.toString());
+            next();
+        };
+
+        errorStream._write = function (chunk, encoding, next) {
+            logger.error(jobId, ':', chunk.toString());
+            next();
+        };
+
+        return {
+            debug: debugStream,
+            error: errorStream
+        };
+    }
+
 
     this.queue = [];
     this.running = {};
@@ -44,9 +67,10 @@ function DockerWorkerManager(params) {
         logger.debug('Creating container', job.dockerParams);
         docker.createContainer(job.dockerParams)
             .then(function (container_) {
+                var streamLoggers = getStreamLoggers(jobId);
                 container = container_;
 
-                logger.info('Container created', container.id);
+                logger.debug('Container created', container.id, 'for job', jobId);
                 if (self.isRunning === false) {
                     // This is needed at stop.
                     throw new Error('Worker Manager was shutdown!');
@@ -55,18 +79,17 @@ function DockerWorkerManager(params) {
                 job.containerId = container.id;
 
                 container.attach({stream: true, stdout: true, stderr: true}, function (err, stream) {
-                    // TODO: Pipe these properly to logger debug/error
-                    container.modem.demuxStream(stream, process.stdout, process.stderr);
+                    container.modem.demuxStream(stream, streamLoggers.debug, streamLoggers.error);
                 });
 
                 return container.start();
             })
             .then(function () {
-                logger.info('Container started');
+                logger.debug('Container started for job', jobId);
                 return container.wait();
             })
             .then(function () {
-                logger.info('Container finished');
+                logger.debug('Container finished for job', jobId);
                 return container.getArchive({path: '/usr/app/webgme-docker-worker-result.json'});
             })
             .then(function (res) {
@@ -95,14 +118,14 @@ function DockerWorkerManager(params) {
                     deferred.resolve(jsonContent);
                 });
 
-                logger.info('Received artifact');
+                logger.debug('Received artifact from job', jobId);
 
                 res.pipe(extract);
 
                 return deferred.promise;
             })
             .then(function (resultStr) {
-                logger.info('Got result str', resultStr);
+                logger.debug('Got result str', resultStr, 'for job', jobId);
                 var parsedRes = JSON.parse(resultStr);
 
                 result = parsedRes.result;
@@ -133,7 +156,7 @@ function DockerWorkerManager(params) {
                             final();
                         });
                 } else {
-                    logger.info('Container is not running');
+                    logger.debug('Container is not running for job', jobId);
                     final();
                 }
             });
@@ -211,7 +234,7 @@ function DockerWorkerManager(params) {
                         job.callback(err);
                     });
             } else {
-                logger.info(jobId, 'does not have a containerId - it should be in launching face and ' +
+                logger.info(jobId, 'does not have a containerId - it is in launching phase and ' +
                     'should throw an error.');
             }
         });
@@ -223,7 +246,7 @@ function DockerWorkerManager(params) {
         var jobId;
 
         if (parameters.command === CONSTANTS.SERVER_WORKER_REQUESTS.EXECUTE_PLUGIN) {
-            logger.info('"executePlugin" received - launching docker container');
+            logger.debug('"executePlugin" received - launching docker container');
 
             // This is used as the name of the container as well.
             jobId = parameters.name + '_' + guid();
@@ -245,7 +268,7 @@ function DockerWorkerManager(params) {
 
             checkQueue();
         } else {
-            logger.info('"', parameters.command, '" received - letting regular SWM handle it.');
+            logger.debug('"', parameters.command, '" received - letting regular SWM handle it.');
             swm.request(parameters, callback);
         }
     };
