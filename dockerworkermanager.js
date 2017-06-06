@@ -16,8 +16,7 @@ var Docker = require('dockerode'),
     WorkerManagerBase = require('webgme/src/server/worker/WorkerManagerBase'),
 // ServerWorkerManager will receive all non-plugin requests.
     ServerWorkerManager = require('webgme/src/server/worker/serverworkermanager'),
-    Stream = require('stream'),
-    container;
+    Stream = require('stream');
 
 
 function DockerWorkerManager(params) {
@@ -57,6 +56,7 @@ function DockerWorkerManager(params) {
 
     function launchContainer(jobId) {
         var job = self.running[jobId],
+            container,
             error,
             result;
 
