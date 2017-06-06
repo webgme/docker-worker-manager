@@ -27,7 +27,7 @@ describe('Full stack DWM', function () {
     gmeConfig.authentication.enable = true;
 
     before(function (done) {
-        this.timeout(10000);
+        this.timeout(200000);
         docker.listImages()
             .then(function (images) {
                 var exists = false;

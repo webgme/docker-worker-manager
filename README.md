@@ -1,4 +1,7 @@
 # webgme-docker-worker
+
+Note! This is not yet published!
+
 Since webgme version [2.14.0](https://github.com/webgme/webgme/releases/tag/v2.14.0) the server worker manager is a replaceable module. 
 The server worker manager (SWM) handles computationally expensive requests such as project/model export, constraint checking, 
 project seeding etc., in processes separate from the server process. 
@@ -7,11 +10,11 @@ If server execution of plugins is available (`gmeConfig.plugin.allowServerExecut
 This module will reuses the basic webgme SWM, but instead of running plugins in separate processes they are executed in docker containers.
 
 It's worth mentioning here that plugins executed on the server do not directly connect to storage database, but rather connects
-to the webgme server through websockets using the identity of the invoker. This means they can't access projects outside of the users scope.
+to the webgme server through websockets using the identity of the invoker of the plugin. This means they can't access projects outside of the users scope.
 
 ## Usage
 
-The host machine must have docker installed. Currently it does not work on windows.
+The host machine must have docker installed. The current setup does not work on docker on windows.
 
 Add this a node-module.
 ```

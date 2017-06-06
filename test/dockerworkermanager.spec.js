@@ -265,7 +265,7 @@ describe('Docker Worker Manager', function () {
             .catch(done);
     });
 
-    // FIXME: This fails on windows (at least) with the error the the container is already being removed..
+    // FIXME: This fails on windows with the error the the container is already being removed..
     it('should handle two requests in parallel', function (done) {
         this.timeout(10000);
 
