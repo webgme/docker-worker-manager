@@ -1,0 +1,9 @@
+# Coverage directory used by tools like istanbul
+coverage
+.git
+
+node_modules
+blob-local-storage/
+
+# IDE metadata
+.idea

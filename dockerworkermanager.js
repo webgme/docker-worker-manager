@@ -297,6 +297,8 @@ function DockerWorkerManager(params) {
                     JSON.stringify(networkInfo));
                 }
 
+                logger.debug('NetworkInfo for "bridge"', JSON.stringify(networkInfo, null, 2));
+
                 webgmeUrl = 'http://' + networkInfo.IPAM.Config[0].Gateway + ':' + gmeConfig.server.port;
                 logger.info('webgme accessible at', webgmeUrl, 'from docker containers.');
                 self.isRunning = true;
