@@ -7,7 +7,7 @@ If server execution of plugins is available (`gmeConfig.plugin.allowServerExecut
 This module will reuses the basic webgme SWM, but instead of running plugins in separate processes they are executed in docker containers.
 
 It's worth mentioning here that plugins executed on the server do not directly connect to storage database, but rather connects
-to the webgme server through websockets using the identity of the invoker of the plugin. This means they can't access projects outside of the users scope.
+to the webgme server through websockets using the identity of the invoker of the plugin. This means they can't access projects outside of the user's scope.
 
 ## Usage
 
@@ -33,8 +33,6 @@ Also note that the approach here will most likely not work if the webgme server 
 
 ### Tests
 To run the full stack tests the a docker images must be built first.
-
-Make sure that the node_modules aren't installed before building the image! 
 
 ```
 docker build -t docker-worker-test:<PACKAGE_JSON.version> .
