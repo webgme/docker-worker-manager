@@ -31,9 +31,9 @@ Also note that the approach here will most likely not work if the webgme server 
 
 ### Common Issues
 If after installing docker you get the error at the server start
-`Could not find correct info from docker "bridge" network correctly` a reload of docker daemon might fix the issue.
+`Could not find correct info from docker "bridge" network correctly` a reload of docker daemon might fix the issue as mentioned in this issue.
 
-https://github.com/moby/moby/issues/18113
+https://github.com/moby/moby/issues/26799
 
 ## Developers
 
