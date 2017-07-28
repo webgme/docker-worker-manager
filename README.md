@@ -19,15 +19,12 @@ npm install webgme-docker-worker-manager --save
 ```
 
 The manager launches containers from existing images. To build an image with the full "webgme stack" for executing plugins. 
-Read through the short [Dockerfile](/Dockerfile). Build correctly it will include all plugins and code for the specific repo.
+Read through the short [Dockerfile](/Dockerfile). Built correctly it will include all plugins and code for the specific repo.
 
 Move over and modify the configuration parameters illustrated in [gmeConfig](./config/config.default.js) to your configuration file.
 
 ### Notes on Limitations
-This implementation uses the default docker `bridge` network for connecting the containers to the webgme server. This should work straight out of the box after docker is installed.
-If this behavior isn't desirable - feel free to create an issue or even better a PR.
-
-Also note that the approach here will most likely not work if the webgme server is running in a docker container itself.
+The current approach here will most likely not work if the webgme server is running in a docker container itself.
 
 ### Common Issues
 If after installing docker you get the error at the server start

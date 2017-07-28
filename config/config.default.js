@@ -10,11 +10,12 @@ config.plugin.allowServerExecution = true;
 
 // Swap these two lines when webgme-docker-worker-manager is a node_module.
 config.server.workerManager.path = path.join(__dirname, '../dockerworkermanager');
-// config.server.workerManager.path = path.join(__dirname, '../node_modules/webgme-docker-worker-manager/dockerworkermanager');
+// config.server.workerManager.path = 'webgme-docker-worker-manager';
 
 // These are the default options - this section can be left out..
 config.server.workerManager.options = {
     //dockerode: null, // https://github.com/apocas/dockerode#getting-started
+    network: 'bridge',
     image: 'webgme-docker-worker',
     maxRunningContainers: 4,
     keepContainersAtFailure: false

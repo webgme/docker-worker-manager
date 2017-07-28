@@ -26,6 +26,7 @@ function DockerWorkerManager(params) {
         docker = new Docker(gmeConfig.server.workerManager.options.dockerode),
         swm = new ServerWorkerManager(params),
         maxRunning = gmeConfig.server.workerManager.options.maxRunningContainers || 2,
+        networkName = gmeConfig.server.workerManager.options.network || 'bridge',
         webgmeUrl;
 
     function getStreamLoggers(jobId) {
@@ -283,7 +284,7 @@ function DockerWorkerManager(params) {
 
         swm.start()
             .then(function () {
-                var network = docker.getNetwork('bridge');
+                var network = docker.getNetwork(networkName);
 
                 return network.inspect();
             })
@@ -293,14 +294,14 @@ function DockerWorkerManager(params) {
                     typeof networkInfo.IPAM.Config[0] === 'object' &&
                     typeof networkInfo.IPAM.Config[0].Gateway === 'string')) {
 
-                    throw new Error('Could not find correct info from docker "bridge" network correctly ' +
+                    throw new Error('Could not find correct info from docker "' + networkName + '" network correctly ' +
                     JSON.stringify(networkInfo));
                 }
 
-                logger.debug('NetworkInfo for "bridge"', JSON.stringify(networkInfo, null, 2));
+                logger.debug('NetworkInfo for "' + networkName + '"', JSON.stringify(networkInfo, null, 2));
 
                 webgmeUrl = 'http://' + networkInfo.IPAM.Config[0].Gateway + ':' + gmeConfig.server.port;
-                logger.info('webgme accessible at', webgmeUrl, 'from docker containers.');
+                logger.info('webgme server accessible at', webgmeUrl, 'from docker containers.');
                 self.isRunning = true;
             })
             .then(deferred.resolve)
