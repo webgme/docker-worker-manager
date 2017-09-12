@@ -13,9 +13,10 @@ var Docker = require('dockerode'),
     tar = require('tar-stream'),
     CONSTANTS = requireJS('common/Constants'),
     guid = requireJS('common/util/guid'),
-    WorkerManagerBase = require('webgme/src/server/worker/WorkerManagerBase'),
+    webgme = require('webgme'),
+    WorkerManagerBase = webgme.WorkerManagerBase,
 // ServerWorkerManager will receive all non-plugin requests.
-    ServerWorkerManager = require('webgme/src/server/worker/serverworkermanager'),
+    ServerWorkerManager = webgme.ServerWorkerManager,
     Stream = require('stream');
 
 
