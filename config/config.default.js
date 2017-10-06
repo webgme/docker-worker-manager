@@ -2,7 +2,7 @@
 'use strict';
 
 var config = require('webgme-engine/config/config.default'),
-    validateConfig = require('webgme-engine/config/validator'),
+    validateConfig = require('webgme-engine/config/validator').validateConfig,
     path = require('path');
 
 // The server worker manager only makes sense if plugin execution on the server is allowed.
