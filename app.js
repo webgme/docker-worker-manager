@@ -3,7 +3,7 @@
 process.chdir(__dirname);
 
 var gmeConfig = require('./config'),
-    webgme = require('webgme'),
+    webgme = require('webgme-engine'),
     myServer;
 
 webgme.addToRequireJsPaths(gmeConfig);
