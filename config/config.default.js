@@ -1,8 +1,8 @@
 /*jshint node: true*/
 'use strict';
 
-var config = require('./config.webgme'),
-    validateConfig = require('webgme/config/validator'),
+var config = require('webgme-engine/config/config.default'),
+    validateConfig = require('webgme-engine/config/validator'),
     path = require('path');
 
 // The server worker manager only makes sense if plugin execution on the server is allowed.
