@@ -6,7 +6,7 @@
 
 'use strict';
 
-var WEBGME = require('webgme'),
+var WEBGME = require('webgme-engine'),
     fs = require('fs'),
     CONSTANTS = requireJS('common/Constants'),
     WorkerRequests = WEBGME.WorkerRequests,
