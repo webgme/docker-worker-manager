@@ -26,7 +26,7 @@ describe('Docker Worker Manager', function () {
         docker = new Docker(gmeConfig.server.workerManager.options.dockerode),
         wm;
 
-    function getRequestParams(timeout, expectType) {
+    function getRequestParams(timeout, expectType, pluginId) {
 
         return {
             timeout: timeout || 0,
@@ -35,7 +35,7 @@ describe('Docker Worker Manager', function () {
             // parameters.expect = 1 -> failure with result
             // parameters.expect = 2 -> failure without result
             command: CONSTANTS.SERVER_WORKER_REQUESTS.EXECUTE_PLUGIN,
-            name: 'DummyPlugin',
+            name: pluginId || 'DummyPlugin',
             context: {
                 managerConfig: {
                     project: 'DummyProjectId'
@@ -129,6 +129,64 @@ describe('Docker Worker Manager', function () {
             .then(function () {
                 expect(wm.isRunning).to.equal(true);
                 wm.request({command: 'DummyCommand'}, function (err) {
+                    try {
+                        expect(err.message).to.contain('unknown command');
+                        done();
+                    } catch (e) {
+                        done(e);
+                    }
+                });
+            })
+            .catch(done);
+    });
+
+    it('plugin with pluginToImage set to null should be handled by regular SWM', function (done) {
+        this.timeout(10000);
+
+        var gmeConfigMod = JSON.parse(JSON.stringify(gmeConfig));
+
+        gmeConfigMod.workerManager.options.pluginToImage = {
+            RegularSWMPlugin: null,
+        };
+
+        wm = new DockerWorkerManager({
+            logger: logger,
+            gmeConfig: gmeConfigMod
+        });
+
+        wm.start()
+            .then(function () {
+                expect(wm.isRunning).to.equal(true);
+                wm.request(getRequestParams(null, null, 'RegularSWMPlugin'), function (err) {
+                    try {
+                        expect(err.message).to.contain('unknown command');
+                        done();
+                    } catch (e) {
+                        done(e);
+                    }
+                });
+            })
+            .catch(done);
+    });
+
+    it('plugin with pluginToImage set to non-existing image should fail', function (done) {
+        this.timeout(10000);
+
+        var gmeConfigMod = JSON.parse(JSON.stringify(gmeConfig));
+
+        gmeConfigMod.workerManager.options.pluginToImage = {
+            NonExistingDockerImage: 'docker-image-does-not-exist',
+        };
+
+        wm = new DockerWorkerManager({
+            logger: logger,
+            gmeConfig: gmeConfigMod
+        });
+
+        wm.start()
+            .then(function () {
+                expect(wm.isRunning).to.equal(true);
+                wm.request(getRequestParams(null, null, 'NonExistingDockerImage'), function (err) {
                     try {
                         expect(err.message).to.contain('unknown command');
                         done();
