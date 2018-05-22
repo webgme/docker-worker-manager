@@ -364,6 +364,8 @@ function DockerWorkerManager(params) {
                 Object.keys(self.running).forEach(function (jobId) {
                     status.workers.push(sanitizeItem(self.running[jobId]));
                 });
+
+                return status;
             })
             .nodeify(callback);
     };

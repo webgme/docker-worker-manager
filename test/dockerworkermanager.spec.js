@@ -198,7 +198,7 @@ describe('Docker Worker Manager', function () {
                 expect(wm.isRunning).to.equal(true);
                 wm.request(getRequestParams(null, null, 'NonExistingDockerImage'), function (err) {
                     try {
-                        expect(err.message).to.equal('No such image');
+                        expect(err.message).to.include('No such image');
                         done();
                     } catch (e) {
                         done(e);
