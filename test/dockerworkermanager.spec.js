@@ -117,6 +117,26 @@ describe('Docker Worker Manager', function () {
             .nodeify(done);
     });
 
+    it('should return status', function (done) {
+        wm = new DockerWorkerManager({
+            logger: logger,
+            gmeConfig: gmeConfig
+        });
+
+        expect(wm.isRunning).to.equal(false);
+
+        wm.start()
+            .then(function () {
+                return wm.getStatus();
+            })
+            .then(function (status) {
+                expect(status.waitingRequests instanceof Array).to.equal(true);
+                expect(status.workers instanceof Array).to.equal(true);
+                return wm.stop();
+            })
+            .nodeify(done);
+    });
+
     it('non plugin command should be handled by regular SWM', function (done) {
         this.timeout(10000);
 
@@ -145,7 +165,7 @@ describe('Docker Worker Manager', function () {
 
         var gmeConfigMod = JSON.parse(JSON.stringify(gmeConfig));
 
-        gmeConfigMod.workerManager.options.pluginToImage = {
+        gmeConfigMod.server.workerManager.options.pluginToImage = {
             RegularSWMPlugin: null,
         };
 
@@ -174,7 +194,7 @@ describe('Docker Worker Manager', function () {
 
         var gmeConfigMod = JSON.parse(JSON.stringify(gmeConfig));
 
-        gmeConfigMod.workerManager.options.pluginToImage = {
+        gmeConfigMod.server.workerManager.options.pluginToImage = {
             NonExistingDockerImage: 'docker-image-does-not-exist',
         };
 
@@ -188,7 +208,7 @@ describe('Docker Worker Manager', function () {
                 expect(wm.isRunning).to.equal(true);
                 wm.request(getRequestParams(null, null, 'NonExistingDockerImage'), function (err) {
                     try {
-                        expect(err.message).to.contain('unknown command');
+                        expect(err.message).to.equal('tbd');
                         done();
                     } catch (e) {
                         done(e);
@@ -313,7 +333,7 @@ describe('Docker Worker Manager', function () {
                 wm.request(getRequestParams(0, 4), function (err) {
                     try {
                         expect(err instanceof Error).to.equal(true);
-                        expect(err.message).to.include('no such file or directory');
+                        expect(err.message).to.include('Could not find the file');
                         done();
                     } catch (e) {
                         done(e);
