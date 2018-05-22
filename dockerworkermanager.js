@@ -347,7 +347,7 @@ function DockerWorkerManager(params) {
         }
 
         if (typeof swm.getStatus === 'function') {
-            swmPromise = swm.getStatus();
+            swmPromise = Q.ninvoke(swm, 'getStatus');
         } else {
             swmPromise = Q({
                 waitingRequests: [],

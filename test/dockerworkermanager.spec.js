@@ -148,16 +148,11 @@ describe('Docker Worker Manager', function () {
         wm.start()
             .then(function () {
                 expect(wm.isRunning).to.equal(true);
-                wm.request({command: 'DummyCommand'}, function (err) {
-                    try {
-                        expect(err.message).to.contain('unknown command');
-                        done();
-                    } catch (e) {
-                        done(e);
-                    }
-                });
+                wm.request({command: 'DummyCommand'}, function () {});
+
+                expect(Object.keys(wm.running).length + wm.queue.length).to.equal(0);
             })
-            .catch(done);
+            .nodeify(done);
     });
 
     it('plugin with pluginToImage set to null should be handled by regular SWM', function (done) {
@@ -177,16 +172,11 @@ describe('Docker Worker Manager', function () {
         wm.start()
             .then(function () {
                 expect(wm.isRunning).to.equal(true);
-                wm.request(getRequestParams(null, null, 'RegularSWMPlugin'), function (err) {
-                    try {
-                        expect(err.message).to.contain('unknown command');
-                        done();
-                    } catch (e) {
-                        done(e);
-                    }
-                });
+                wm.request(getRequestParams(null, null, 'RegularSWMPlugin'), function () {});
+
+                expect(Object.keys(wm.running).length + wm.queue.length).to.equal(0);
             })
-            .catch(done);
+            .nodeify(done);
     });
 
     it('plugin with pluginToImage set to non-existing image should fail', function (done) {
@@ -208,7 +198,7 @@ describe('Docker Worker Manager', function () {
                 expect(wm.isRunning).to.equal(true);
                 wm.request(getRequestParams(null, null, 'NonExistingDockerImage'), function (err) {
                     try {
-                        expect(err.message).to.equal('tbd');
+                        expect(err.message).to.equal('No such image');
                         done();
                     } catch (e) {
                         done(e);
