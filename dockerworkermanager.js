@@ -269,6 +269,7 @@ function DockerWorkerManager(params) {
             self.queue.push({
                 id: jobId,
                 containerId: null,
+                request: parameters,
                 requesterCallback: callback,
                 dockerParams: {
                     Image: imageName,
@@ -329,6 +330,41 @@ function DockerWorkerManager(params) {
             swm.stop(),
             stopRunningContainers()
         ])
+            .nodeify(callback);
+    };
+
+    this.getStatus = function (callback) {
+        var swmPromise;
+
+        function sanitizeItem(request) {
+            var result = JSON.parse(JSON.stringify(request));
+
+            // Make sure tokens are removed
+            delete result.request.webgmeToken;
+            delete result.dockerParams.Cmd;
+
+            return result;
+        }
+
+        if (typeof swm.getStatus === 'function') {
+            swmPromise = swm.getStatus();
+        } else {
+            swmPromise = Q({
+                waitingRequests: [],
+                workers: [],
+            });
+        }
+
+        return swmPromise
+            .then(function (status) {
+                self.queue.forEach(function (item) {
+                    status.waitingRequests.push(sanitizeItem(item));
+                });
+
+                Object.keys(self.running).forEach(function (jobId) {
+                    status.workers.push(sanitizeItem(self.running[jobId]));
+                });
+            })
             .nodeify(callback);
     };
 }
