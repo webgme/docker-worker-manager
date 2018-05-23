@@ -26,7 +26,7 @@ describe('Docker Worker Manager', function () {
         docker = new Docker(gmeConfig.server.workerManager.options.dockerode),
         wm;
 
-    function getRequestParams(timeout, expectType) {
+    function getRequestParams(timeout, expectType, pluginId) {
 
         return {
             timeout: timeout || 0,
@@ -35,7 +35,7 @@ describe('Docker Worker Manager', function () {
             // parameters.expect = 1 -> failure with result
             // parameters.expect = 2 -> failure without result
             command: CONSTANTS.SERVER_WORKER_REQUESTS.EXECUTE_PLUGIN,
-            name: 'DummyPlugin',
+            name: pluginId || 'DummyPlugin',
             context: {
                 managerConfig: {
                     project: 'DummyProjectId'
@@ -117,6 +117,26 @@ describe('Docker Worker Manager', function () {
             .nodeify(done);
     });
 
+    it('should return status', function (done) {
+        wm = new DockerWorkerManager({
+            logger: logger,
+            gmeConfig: gmeConfig
+        });
+
+        expect(wm.isRunning).to.equal(false);
+
+        wm.start()
+            .then(function () {
+                return wm.getStatus();
+            })
+            .then(function (status) {
+                expect(status.waitingRequests instanceof Array).to.equal(true);
+                expect(status.workers instanceof Array).to.equal(true);
+                return wm.stop();
+            })
+            .nodeify(done);
+    });
+
     it('non plugin command should be handled by regular SWM', function (done) {
         this.timeout(10000);
 
@@ -128,9 +148,57 @@ describe('Docker Worker Manager', function () {
         wm.start()
             .then(function () {
                 expect(wm.isRunning).to.equal(true);
-                wm.request({command: 'DummyCommand'}, function (err) {
+                wm.request({command: 'DummyCommand'}, function () {});
+
+                expect(Object.keys(wm.running).length + wm.queue.length).to.equal(0);
+            })
+            .nodeify(done);
+    });
+
+    it('plugin with pluginToImage set to null should be handled by regular SWM', function (done) {
+        this.timeout(10000);
+
+        var gmeConfigMod = JSON.parse(JSON.stringify(gmeConfig));
+
+        gmeConfigMod.server.workerManager.options.pluginToImage = {
+            RegularSWMPlugin: null,
+        };
+
+        wm = new DockerWorkerManager({
+            logger: logger,
+            gmeConfig: gmeConfigMod
+        });
+
+        wm.start()
+            .then(function () {
+                expect(wm.isRunning).to.equal(true);
+                wm.request(getRequestParams(null, null, 'RegularSWMPlugin'), function () {});
+
+                expect(Object.keys(wm.running).length + wm.queue.length).to.equal(0);
+            })
+            .nodeify(done);
+    });
+
+    it('plugin with pluginToImage set to non-existing image should fail', function (done) {
+        this.timeout(10000);
+
+        var gmeConfigMod = JSON.parse(JSON.stringify(gmeConfig));
+
+        gmeConfigMod.server.workerManager.options.pluginToImage = {
+            NonExistingDockerImage: 'docker-image-does-not-exist',
+        };
+
+        wm = new DockerWorkerManager({
+            logger: logger,
+            gmeConfig: gmeConfigMod
+        });
+
+        wm.start()
+            .then(function () {
+                expect(wm.isRunning).to.equal(true);
+                wm.request(getRequestParams(null, null, 'NonExistingDockerImage'), function (err) {
                     try {
-                        expect(err.message).to.contain('unknown command');
+                        expect(err.message).to.include('No such image');
                         done();
                     } catch (e) {
                         done(e);
@@ -255,7 +323,7 @@ describe('Docker Worker Manager', function () {
                 wm.request(getRequestParams(0, 4), function (err) {
                     try {
                         expect(err instanceof Error).to.equal(true);
-                        expect(err.message).to.include('no such file or directory');
+                        expect(err.message).to.include('Could not find the file');
                         done();
                     } catch (e) {
                         done(e);

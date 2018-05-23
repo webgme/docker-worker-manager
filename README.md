@@ -5,13 +5,14 @@ project seeding etc., in processes separate from the server process.
 
 If server execution of plugins is available (`gmeConfig.plugin.allowServerExecution = true;`) these are also handled by the SWM. 
 This module will reuses the basic webgme SWM, but instead of running plugins in separate processes they are executed in docker containers.
+(This can be configured per plugin, see config/config.default.js)
 
 It's worth mentioning here that plugins executed on the server do not directly connect to storage database, but rather connects
 to the webgme server through websockets using the identity of the invoker of the plugin. This means they can't access projects outside of the user's scope.
 
 ## Usage
 
-The host machine must have docker installed. The current setup does not work on docker on windows.
+The host machine must have docker installed.
 
 Add this a node-module.
 ```
@@ -23,8 +24,21 @@ Read through the short [Dockerfile](/Dockerfile). Built correctly it will includ
 
 Move over and modify the configuration parameters illustrated in [gmeConfig](./config/config.default.js) to your configuration file.
 
+### Together with Dockerized WebGME Server
+If the webgme server itself runs within a docker container it is preferable to run the workers as sibling containers.
+With using the default settings the webgme container can be given access to the docker socket by mapping it as a volume to
+the webgme-server (`-v`).
+
+Currently the webgme server needs to be available from the host which can be acheived using the `-p` option. If the port on the host
+is different, this port be specified in the `config.server.workerManager.options.webgmeServerPort`.
+(As always, gmeConfig params can be overwritten through env. vars. using `process.ENV` in your config file.)
+
+```
+docker run -d -p 8888:8888 -v /var/run/docker.sock:/var/run/docker.sock -e NODE_ENV='myConfigWithDockerWM' webgme-server
+```
+
 ### Notes on Limitations
-The current approach here will most likely not work if the webgme server is running in a docker container itself.
+The current setup does not work on docker on windows.
 
 ### Common Issues
 If after installing docker you get the error at the server start

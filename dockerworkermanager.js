@@ -28,6 +28,8 @@ function DockerWorkerManager(params) {
         swm = new ServerWorkerManager(params),
         maxRunning = gmeConfig.server.workerManager.options.maxRunningContainers || 2,
         networkName = gmeConfig.server.workerManager.options.network || 'bridge',
+        pluginToImage = gmeConfig.server.workerManager.options.pluginToImage || {},
+        webgmePort = gmeConfig.server.workerManager.options.webgmeServerPort || gmeConfig.server.port,
         webgmeUrl;
 
     function getStreamLoggers(jobId) {
@@ -245,10 +247,19 @@ function DockerWorkerManager(params) {
     }
 
     this.request = function (parameters, callback) {
-        var jobId;
+        let jobId;
 
         if (parameters.command === CONSTANTS.SERVER_WORKER_REQUESTS.EXECUTE_PLUGIN) {
             logger.debug('"executePlugin" received - launching docker container');
+            let imageName = pluginToImage[parameters.name];
+
+            if (imageName === null) {
+                logger.debug('Plugin"', parameters.name, '" will be handled by regular SWM.');
+                swm.request(parameters, callback);
+                return;
+            } else if (imageName === undefined) {
+                imageName = gmeConfig.server.workerManager.options.image || 'webgme-docker-worker';
+            }
 
             // This is used as the name of the container as well.
             jobId = parameters.name + '_' + guid();
@@ -258,9 +269,10 @@ function DockerWorkerManager(params) {
             self.queue.push({
                 id: jobId,
                 containerId: null,
+                request: parameters,
                 requesterCallback: callback,
                 dockerParams: {
-                    Image: gmeConfig.server.workerManager.options.image || 'webgme-docker-worker',
+                    Image: imageName,
                     name: jobId,
                     Tty: false, // False in order to separate stdout/err.
                     Env: ['NODE_ENV=' + (process.env.NODE_ENV || 'default')],
@@ -301,7 +313,7 @@ function DockerWorkerManager(params) {
 
                 logger.debug('NetworkInfo for "' + networkName + '"', JSON.stringify(networkInfo, null, 2));
 
-                webgmeUrl = 'http://' + networkInfo.IPAM.Config[0].Gateway + ':' + gmeConfig.server.port;
+                webgmeUrl = 'http://' + networkInfo.IPAM.Config[0].Gateway + ':' + webgmePort;
                 logger.info('webgme server accessible at', webgmeUrl, 'from docker containers.');
                 self.isRunning = true;
             })
@@ -318,6 +330,43 @@ function DockerWorkerManager(params) {
             swm.stop(),
             stopRunningContainers()
         ])
+            .nodeify(callback);
+    };
+
+    this.getStatus = function (callback) {
+        var swmPromise;
+
+        function sanitizeItem(request) {
+            var result = JSON.parse(JSON.stringify(request));
+
+            // Make sure tokens are removed
+            delete result.request.webgmeToken;
+            delete result.dockerParams.Cmd;
+
+            return result;
+        }
+
+        if (typeof swm.getStatus === 'function') {
+            swmPromise = Q.ninvoke(swm, 'getStatus');
+        } else {
+            swmPromise = Q({
+                waitingRequests: [],
+                workers: [],
+            });
+        }
+
+        return swmPromise
+            .then(function (status) {
+                self.queue.forEach(function (item) {
+                    status.waitingRequests.push(sanitizeItem(item));
+                });
+
+                Object.keys(self.running).forEach(function (jobId) {
+                    status.workers.push(sanitizeItem(self.running[jobId]));
+                });
+
+                return status;
+            })
             .nodeify(callback);
     };
 }
