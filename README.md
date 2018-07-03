@@ -4,7 +4,7 @@ The server worker manager (SWM) handles computationally expensive requests such 
 project seeding etc., in processes separate from the server process. 
 
 If server execution of plugins is available (`gmeConfig.plugin.allowServerExecution = true;`) these are also handled by the SWM. 
-This module will reuses the basic webgme SWM, but instead of running plugins in separate processes they are executed in docker containers.
+This module reuses the basic webgme SWM, but instead of running plugins in separate processes they are executed in docker containers.
 (This can be configured per plugin, see config/config.default.js)
 
 It's worth mentioning here that plugins executed on the server do not directly connect to storage database, but rather connects
