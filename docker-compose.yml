@@ -28,7 +28,9 @@ services:
   webgme-docker-worker:
     build:
       context: .
-    command: ["cat", "/dev/null"] # A no-op command so the image is built.
+    depends_on:
+      - webgme-server
     environment:
       - NODE_ENV=docker
       - WEBGME_IP=webgme-server
+    command: ["cat", "/dev/null"] # A no-op command so the image is built.
