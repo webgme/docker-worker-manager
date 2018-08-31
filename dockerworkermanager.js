@@ -297,23 +297,27 @@ function DockerWorkerManager(params) {
 
         swm.start()
             .then(function () {
-                var network = docker.getNetwork(networkName);
-
-                return network.inspect();
+                if (!params.webgmeUrl) {
+                    return docker.getNetwork(networkName).inspect();
+                }
             })
             .then(function (networkInfo) {
-                if (!(networkInfo && networkInfo.IPAM &&
+                if (params.webgmeUrl) {
+                    webgmeUrl = params.webgmeUrl;
+                } else if (!(networkInfo && networkInfo.IPAM &&
                     networkInfo.IPAM.Config instanceof Array &&
                     typeof networkInfo.IPAM.Config[0] === 'object' &&
                     typeof networkInfo.IPAM.Config[0].Gateway === 'string')) {
 
                     throw new Error('Could not find correct info from docker "' + networkName + '" network correctly ' +
                     JSON.stringify(networkInfo));
+                } else {
+                    logger.debug('NetworkInfo for "' + networkName + '"', JSON.stringify(networkInfo, null, 2));
+
+                    webgmeUrl = 'http://' + networkInfo.IPAM.Config[0].Gateway + ':' + webgmePort;
                 }
 
-                logger.debug('NetworkInfo for "' + networkName + '"', JSON.stringify(networkInfo, null, 2));
 
-                webgmeUrl = 'http://' + networkInfo.IPAM.Config[0].Gateway + ':' + webgmePort;
                 logger.info('webgme server accessible at', webgmeUrl, 'from docker containers.');
                 self.isRunning = true;
             })

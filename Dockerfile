@@ -6,8 +6,8 @@
 # 2. Build the image
 #     $ docker build -t webgme-docker-worker .
 
-# https://github.com/nodejs/docker-node/blob/3b038b8a1ac8f65e3d368bedb9f979884342fdcb/6.9/Dockerfile
-FROM node:boron
+# Node 8
+FROM node:carbon
 
 RUN mkdir /usr/app
 
@@ -20,7 +20,7 @@ ADD . /usr/app/
 RUN npm install
 
 # Needed only if webgme is a peerDependency
-RUN npm install webgme
+RUN npm install webgme-engine
 
 # Uncomment this line if webgme-docker-worker-manager is a node_module (which is probably is).
 # RUN cp /usr/app/node_modules/webgme-docker-worker-manager/dockerworker.js /usr/app/dockerworker.js
