@@ -9,8 +9,9 @@
 version: '3'
 services:
   webgme-server:
-    build: .
-    dockerfile: DockerfileServer
+    build: 
+      context: .
+      dockerfile: DockerfileServer
     depends_on:
       - mongo
     environment:
@@ -24,7 +25,7 @@ services:
   mongo:
     image: mongo:3.4.1
     ports:
-      #- 27017:27017 # Uncomment to expose mongo-port on host
+      - 27017:27017 # Uncomment to expose mongo-port on host
   webgme-docker-worker:
     build:
       context: .

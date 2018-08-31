@@ -12,6 +12,6 @@ ADD . /usr/app/
 RUN npm install
 
 # Needed only if webgme is a peerDependency
-RUN npm install webgme-engine
+RUN npm install webgme
 
 CMD ["npm", "start"]

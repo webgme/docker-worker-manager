@@ -1,7 +1,7 @@
 /*jshint node: true*/
 'use strict';
 
-var config = require('webgme-engine/config/config.default'),
+var config = require('webgme/config/config.default'),
     validateConfig = require('webgme-engine/config/validator').validateConfig,
     path = require('path');
 
