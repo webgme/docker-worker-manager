@@ -1,0 +1,17 @@
+# Node 8
+FROM node:carbon
+
+RUN mkdir /usr/app
+
+WORKDIR /usr/app
+
+# copy app source
+ADD . /usr/app/
+
+# Install the node-modules.
+RUN npm install
+
+# Needed only if webgme is a peerDependency
+RUN npm install webgme-engine
+
+CMD ["npm", "start"]
