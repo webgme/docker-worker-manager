@@ -1,6 +1,5 @@
 /* globals process, require, module */
 const config = require('./config.default');
-//const validateConfig = require('webgme-engine/config/validator');
 
 // This is only for testing - it will persist everything inside the containers.
 config.mongo.uri = 'mongodb://' + process.env.MONGO_IP + ':27017/multi';

@@ -20,7 +20,7 @@ ADD . /usr/app/
 RUN npm install
 
 # Needed only if webgme is a peerDependency
-RUN npm install webgme
+RUN npm install webgme-engine
 
 # Uncomment this line if webgme-docker-worker-manager is a node_module (which is probably is).
 # RUN cp /usr/app/node_modules/webgme-docker-worker-manager/dockerworker.js /usr/app/dockerworker.js
