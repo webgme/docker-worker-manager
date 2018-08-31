@@ -14,7 +14,8 @@ config.server.workerManager.options.createParams = {
 config.seedProjects.createAtStartup = [{
     projectName: 'Example',
     seedId: 'EmptyProject',
-    creatorId: 'guest'
+    creatorId: 'guest',
+    rights: {}
 }];
 
 //validateConfig(config);
