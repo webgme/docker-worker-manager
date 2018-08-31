@@ -30,6 +30,7 @@ function DockerWorkerManager(params) {
         networkName = gmeConfig.server.workerManager.options.network || 'bridge',
         pluginToImage = gmeConfig.server.workerManager.options.pluginToImage || {},
         webgmePort = gmeConfig.server.workerManager.options.webgmeServerPort || gmeConfig.server.port,
+        createParams = gmeConfig.server.workerManager.options.createParams || {},
         webgmeUrl;
 
     function getStreamLoggers(jobId) {
@@ -247,7 +248,8 @@ function DockerWorkerManager(params) {
     }
 
     this.request = function (parameters, callback) {
-        let jobId;
+        let jobId,
+            dockerParams;
 
         if (parameters.command === CONSTANTS.SERVER_WORKER_REQUESTS.EXECUTE_PLUGIN) {
             logger.debug('"executePlugin" received - launching docker container');
@@ -266,18 +268,25 @@ function DockerWorkerManager(params) {
 
             parameters.webgmeUrl = webgmeUrl;
 
+            dockerParams = {
+                Image: imageName,
+                name: jobId,
+                Tty: false, // False in order to separate stdout/err.
+                Env: ['NODE_ENV=' + (process.env.NODE_ENV || 'default')],
+                Cmd: ['node', 'dockerworker.js', JSON.stringify(parameters)]
+            };
+
+            Object.keys(createParams)
+                .forEach((key) => {
+                    dockerParams[key] = createParams[key];
+                });
+
             self.queue.push({
                 id: jobId,
                 containerId: null,
                 request: parameters,
                 requesterCallback: callback,
-                dockerParams: {
-                    Image: imageName,
-                    name: jobId,
-                    Tty: false, // False in order to separate stdout/err.
-                    Env: ['NODE_ENV=' + (process.env.NODE_ENV || 'default')],
-                    Cmd: ['node', 'dockerworker.js', JSON.stringify(parameters)]
-                }
+                dockerParams: dockerParams
             });
 
             checkQueue();

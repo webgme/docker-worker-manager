@@ -42,6 +42,13 @@ config.server.workerManager.options = {
     // This is needed when connecting to the webgme server container directly (without going through the host).
     // When defined  the network and webgmeServerPort options aren't used.
     webgmeUrl: null,
+
+    // Key-value pair for passing in additional parameters or overwriting the default passed from this module.
+    // Example: Limit containers memory to 512Mb {HostConfig: {Memory: 536870912}}
+    // Before modifying this make sure not to overwrite anything that the manager strictly depends on.
+    // Check the code in dockerworkermanager.js - search for dockerParams.
+    // https://docs.docker.com/engine/api/v1.37/#operation/ContainerCreate
+    createParams: null,
 };
 
 validateConfig(config);
