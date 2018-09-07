@@ -1,7 +1,7 @@
 {
   "name": "webgme-docker-worker-manager",
   "description": "Docker container-based substitute for webgme's server worker manager",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "main": "dockerworkermanager",
   "keywords": [
     "webgme",
