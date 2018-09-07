@@ -306,13 +306,13 @@ function DockerWorkerManager(params) {
 
         swm.start()
             .then(function () {
-                if (!params.webgmeUrl) {
+                if (!gmeConfig.server.workerManager.options.webgmeUrl) {
                     return docker.getNetwork(networkName).inspect();
                 }
             })
             .then(function (networkInfo) {
-                if (params.webgmeUrl) {
-                    webgmeUrl = params.webgmeUrl;
+                if (gmeConfig.server.workerManager.options.webgmeUrl) {
+                    webgmeUrl = gmeConfig.server.workerManager.options.webgmeUrl;
                 } else if (!(networkInfo && networkInfo.IPAM &&
                     networkInfo.IPAM.Config instanceof Array &&
                     typeof networkInfo.IPAM.Config[0] === 'object' &&
