@@ -26,19 +26,16 @@ Move over and modify the configuration parameters illustrated in [gmeConfig](./c
 
 ### Together with Dockerized WebGME Server
 If the webgme server itself runs within a docker container it is preferable to run the workers as sibling containers.
+
+![siblings](images/worker-siblings.png "The webgme server spawns transient workers")
+
 With using the default settings the webgme container can be given access to the docker socket by mapping it as a volume to
 the webgme-server (`-v`).
-
-Currently the webgme server needs to be available from the host which can be acheived using the `-p` option. If the port on the host
-is different, this port be specified in the `config.server.workerManager.options.webgmeServerPort`.
-(As always, gmeConfig params can be overwritten through env. vars. using `process.ENV` in your config file.)
 
 ```
 docker run -d -p 8888:8888 -v /var/run/docker.sock:/var/run/docker.sock -e NODE_ENV='myConfigWithDockerWM' webgme-server
 ```
 
-### Notes on Limitations
-The current setup does not work on docker on windows.
 
 ### Common Issues
 If after installing docker you get the error at the server start
